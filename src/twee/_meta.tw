@@ -1,0 +1,44 @@
+:: StoryData
+{
+	"ifid": "50B86BAC-DF21-48DD-A67F-5C0A271889AE",
+	"format": "SugarCube",
+	"format-version": "2.34.1"
+}
+
+:: StoryTitle
+NTree
+
+:: Start
+
+<<treebranch "vn">>
+<<leaf {
+	spriteL: "path/to/sL.png",
+	spriteR: "path/to/sR.png"
+}>>
+	Block 1
+<<leaf {
+	spriteL: NTree.clear
+}>>
+	Block 2
+<<leaf {
+	spriteL: "path/to/sL2.png"
+}>>
+	Block 3
+<</treebranch>>
+
+[[Start]]
+[[Two]]
+
+:: Two
+
+<<treebranch "vn">>
+<<leaf>>
+	2 Block 2
+<<leaf {
+	spriteL: "path/to/sL3.png"
+}>>
+	2 Block 3
+<</treebranch>>
+
+[[Start]]
+[[Two]]

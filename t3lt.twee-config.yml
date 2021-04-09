@@ -1,0 +1,31 @@
+sugarcube-2:
+  macros:
+    treebranch:
+      name: treebranch
+      container: true
+      children:
+        - leaf
+      description: |-
+        Adds a branch to a pre-registered NTree.
+
+        Usage:
+        ```
+        <<treebranch "Pre-registered NTree ID">>
+          /* code */
+        <</treebranch>>
+        ```
+        READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#treebranch)
+      skipArgs: true
+    leaf:
+      name: leaf
+      parents:
+        - treebranch
+      description: |-
+        Adds a leaf to an NTree branch.
+
+        Usage:
+        ```
+        <<leaf [provider update object]>>
+        ```
+        READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#leaf)
+      skipArgs: true

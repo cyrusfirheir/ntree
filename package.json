@@ -1,0 +1,26 @@
+{
+	"name": "ntree",
+	"version": "0.1.0",
+	"description": "A Narrative Tree framework for SugarCube 2.",
+	"scripts": {
+		"build": "npm run flush && webpack --mode production && npm run tweego-build",
+		"dev": "concurrently --kill-others \"webpack --watch --mode development\" \"npm run tweego-watch\" \"npm run serve\"",
+		"tweego-build": "tweego --output=dist/index.html --head=src/head.html --module=src/modules src/__compiled src/styles src/twee",
+		"tweego-watch": "tweego --watch --output=dist/index.html --head=src/head.html --module=src/modules src/__compiled src/styles src/twee",
+		"serve": "live-server dist",
+		"flush": "rimraf src/__compiled",
+		"postinstall": "node .scripts/postinstall.js"
+	},
+	"author": "cyrusfirheir",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/twine-sugarcube": "^2.34.0",
+		"concurrently": "^6.0.0",
+		"live-server": "^1.2.1",
+		"rimraf": "^3.0.2",
+		"ts-loader": "^8.0.17",
+		"typescript": "^4.2.2",
+		"webpack": "^5.24.2",
+		"webpack-cli": "^4.5.0"
+	}
+}
