@@ -50,7 +50,7 @@ export class NTree {
 	 * @param config Configuration object for the NTree.
 	 */
 	constructor(id: string,	config?: NTreeConfig) {
-		if (!id) throw new Error(`@NTree: No ID specified!`);
+		if (!id?.trim()) throw new Error(`@NTree: No ID specified!`);
 
 		this.id = id;
 		this.providers = config?.providers ?? new Map();

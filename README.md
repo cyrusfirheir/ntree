@@ -1,12 +1,14 @@
 # Narrative Tree (NTree)
 
-Narrative Tree (NTree) library for SugarCube 2. This repository contains only the TypeScript source.
+Narrative Tree (NTree) library for SugarCube 2. This repository contains only the development project with the TypeScript source.
+
+Use the TS in projects with: [`src/scripts/ntree/index.ts`](src/scripts/ntree/index.ts).
 
 Documentation and more information can be found [here] (link coming soon.)
 
 ---
 
-*This project was built on [SugarCube 2 + TypeScript project template](https://github.com/cyrusfirheir/sc2-ts-template).*
+*This project was built on the [SugarCube 2 + TypeScript project template](https://github.com/cyrusfirheir/sc2-ts-template).*
 
 ---
 
