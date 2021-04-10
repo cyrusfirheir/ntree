@@ -10,7 +10,7 @@ NTree
 
 :: Start
 
-<<treebranch "vn">>
+<<treebranch "vn" "id" repeat>>
 <<leaf {
 	spriteL: "path/to/sL.png",
 	spriteR: "path/to/sR.png"
@@ -31,7 +31,7 @@ NTree
 
 :: Two
 
-<<treebranch "vn">>
+<<treebranch "vn" "id2">>
 <<leaf>>
 	2 Block 2
 <<leaf {

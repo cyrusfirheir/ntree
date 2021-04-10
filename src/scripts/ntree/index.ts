@@ -6,7 +6,9 @@ interface NTreeConfig {
 
 interface NTreeState {
 	id: string;
-	log: string[];
+	log: {
+		[key: string]: number;
+	};
 }
 
 interface Provider {
@@ -49,7 +51,7 @@ export class NTree {
 	 * @param id ID to register the NTree as.
 	 * @param config Configuration object for the NTree.
 	 */
-	constructor(id: string,	config?: NTreeConfig) {
+	constructor(id: string, config?: NTreeConfig) {
 		if (!id?.trim()) throw new Error(`@NTree: No ID specified!`);
 
 		this.id = id;
@@ -62,7 +64,7 @@ export class NTree {
 
 		const stateInit: NTreeState = {
 			id,
-			log: []
+			log: {}
 		};
 
 		NTree.Repository.set(id, this);
@@ -101,7 +103,7 @@ export class NTree {
 
 	/** State data of the NTree. */
 	get state() {
-		return NTree.getState(this.id);
+		return NTree.getState(this.id) as NTreeState;
 	}
 
 	/**
@@ -203,38 +205,64 @@ export class NTree {
 
 (window as any).NTree = NTree;
 
+enum NTreeBranchRepeatConfig {
+	NoRepeat = "norepeat",
+	RepeatLast = "repeatlast",
+	Repeat = "repeat"
+}
+
 Macro.add("treebranch", {
 	tags: ["leaf"],
-	skipArgs: true,
+
+	//@ts-ignore. the typedefs are stoopid. skipArgs accepts array too! ><
+	skipArgs: ["leaf"],
+
 	handler() {
 		try {
-			const id: string = Scripting.evalJavaScript(this.args.full);
+			const treeID: string = this.args[0];
+			const branchID: string = this.args[1];
+			const repeat: string = this.args[2] ?? NTreeBranchRepeatConfig.RepeatLast;
 
-			if (!id?.trim()) throw new Error(`@NTreeBranch: No NTree ID specified!`);
+			if (!treeID?.trim()) throw new Error(`@NTreeBranch: No NTree ID specified!`);
+			if (!branchID?.trim()) throw new Error(`@NTreeBranch: No NTreeBranch ID specified`)
 
-			const nTree = NTree.getNTree(id);
+			const nTree = NTree.getNTree(treeID);
+			if (!nTree) throw new Error(`@NTreeBranch: No NTree with specified ID "${treeID}" found!`);
 
-			if (!nTree) throw new Error(`@NTreeBranch: No NTree with specified ID found!`);
+			const latest = nTree.state.log[branchID] ?? 0;
+			let current = latest + 1;
 
-			const latest = nTree.state?.log.count(passage()) ?? 0;
-			const current = latest + 1;
-
-			if (current < this.payload.length) {
-				(this as any).currentPayload = current;
-
-				const chunk = this.payload[current];
-				const args = chunk.args.full.trim() || "{}";
-				try {
-					const pDelta: ProviderDelta = Scripting.evalJavaScript(`(${args})`);
-					pDelta.__default = chunk.contents;
-
-					nTree.update(pDelta, this);
-
-					nTree.state?.log.push(passage());
-				} catch (ex) {
-					throw new Error(`@NTreeLeaf/#${current - 1}: Malformed argument object:\n${args}: ${ex}`);
+			if (current === this.payload.length) {
+				switch (repeat) {
+					case NTreeBranchRepeatConfig.Repeat: {
+						current = 1;
+						break;
+					}
+					case NTreeBranchRepeatConfig.RepeatLast: {
+						current = latest;
+						break;
+					}
+					case NTreeBranchRepeatConfig.NoRepeat: {
+						return;
+					}
 				}
 			}
+
+			(this as any).currentPayload = current;
+
+			const chunk = this.payload[current];
+			const args = chunk.args.full.trim() || "{}";
+			try {
+				const pDelta: ProviderDelta = Scripting.evalJavaScript(`(${args})`);
+				pDelta.__default = chunk.contents;
+
+				nTree.update(pDelta, this);
+
+				nTree.state.log[branchID] = current;
+			} catch (ex) {
+				throw new Error(`@NTreeLeaf/#${current - 1}: Malformed argument object:\n${args}: ${ex}`);
+			}
+
 		} catch (ex) {
 			this.error("bad evaluation: " + (typeof ex === "object" ? ex.message : ex));
 		}

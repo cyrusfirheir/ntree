@@ -10,12 +10,13 @@ sugarcube-2:
 
         Usage:
         ```
-        <<treebranch "Pre-registered NTree ID">>
-          /* code */
+        <<treebranch NTreeID NTreeBranchID [norepeat|repeatlast|repeat]>>
+          …
         <</treebranch>>
         ```
         READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#treebranch)
-      skipArgs: true
+      parameters:
+        - string &+ string |+ "norepeat"|"repeatlast"|"repeat"
     leaf:
       name: leaf
       parents:
