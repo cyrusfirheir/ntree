@@ -4,7 +4,7 @@ Narrative Tree (NTree) library for SugarCube 2. This repository contains only th
 
 Use the TS in projects with: [`src/scripts/ntree/index.ts`](src/scripts/ntree/index.ts).
 
-Documentation and more information can be found [here] (link coming soon.)
+Documentation and more information can be found [here](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree).
 
 ---
 
