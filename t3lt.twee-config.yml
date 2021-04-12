@@ -6,7 +6,7 @@ sugarcube-2:
       children:
         - leaf
       description: |-
-        Adds a branch to a pre-registered NTree.
+        Defines a branch on a registered NTree.
 
         Usage:
         ```
@@ -14,7 +14,7 @@ sugarcube-2:
           …
         <</treebranch>>
         ```
-        READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#treebranch)
+        READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#a-macro-treebranch)
       parameters:
         - string &+ string |+ "norepeat"|"repeatlast"|"repeat"
     leaf:
@@ -22,11 +22,12 @@ sugarcube-2:
       parents:
         - treebranch
       description: |-
-        Adds a leaf to an NTree branch.
+        Defines a leaf on an NTree branch.
 
         Usage:
         ```
         <<leaf [provider update object]>>
+          …
         ```
-        READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#leaf)
+        READ: [Documentation](https://github.com/cyrusfirheir/cycy-wrote-custom-macros/tree/master/narrative-tree#a-macro-leaf)
       skipArgs: true

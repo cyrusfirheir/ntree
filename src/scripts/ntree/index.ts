@@ -7,16 +7,16 @@ interface NTreeState {
 	};
 }
 
-interface Provider {
+interface Handler {
 	id?: string;
 	skipArgs?: boolean;
 	clearOnEveryLeaf?: boolean;
 	onUpdate: (...args: any) => void;
 	onClear?: (macroContext?: MacroContext) => void;
-	delta?: ProviderDelta;
+	delta?: HandlerDelta;
 }
 
-interface ProviderDelta {
+interface HandlerDelta {
 	[key: string]: any;
 }
 
@@ -25,14 +25,14 @@ type NTreeStateStore = Map<string, NTreeState>;
 
 export class NTree {
 	id: string;
-	providers: Map<string, Provider> = new Map();
+	handlers: Map<string, Handler> = new Map();
 
 	constructor(id: string) {
 		if (!id?.trim()) throw new Error(`@NTree: No ID specified!`);
 
 		this.id = id;
 
-		this.registerDefault(NTree.defaultProviderOnUpdate);
+		this.registerDefault(NTree.defaultOnUpdateHandler);
 
 		NTree.Repository.set(id, this);
 		NTree.StateStore.set(id, {
@@ -63,50 +63,50 @@ export class NTree {
 		return NTree.getState(this.id) as NTreeState;
 	}
 
-	registerProvider(id: string | string[], def: Provider) {
+	registerHandler(id: string | string[], def: Handler) {
 		const IDs = id instanceof Array ? id : [id];
 
 		for (const id of IDs) {
-			if (!id?.trim()) throw new Error(`@NTree/${this.id}: Provider ID not specified!`);
+			if (!id?.trim()) throw new Error(`@NTree/${this.id}: Handler ID not specified!`);
 
-			if (this.providers.has(id)) this.providers.delete(id);
+			this.handlers.delete(id);
 
-			const errorSource = `@NTree/${this.id}/providers/${id}`;
+			const errorSource = `@NTree/${this.id}/handlers/${id}`;
 
-			if (!def.onUpdate) throw new Error(`${errorSource}: No definition for handler() found!`);
-			if (!(def.onUpdate instanceof Function)) throw new Error(`${errorSource}: Specified handler() is not a function!`);
+			if (!def.onUpdate) throw new Error(`${errorSource}: No definition for onUpdate() found!`);
+			if (!(def.onUpdate instanceof Function)) throw new Error(`${errorSource}: Specified onUpdate() is not a function!`);
 
-			if (def.onClear && !(def.onClear instanceof Function)) throw new Error(`${errorSource}: Specified clear() is not a function!`);
+			if (def.onClear && !(def.onClear instanceof Function)) throw new Error(`${errorSource}: Specified onClear() is not a function!`);
 
-			this.providers.set(id, Object.assign(Object.create(null), def, { id }));
+			this.handlers.set(id, Object.assign(Object.create(null), def, { id }));
 		}
 
 		return this;
 	}
 
-	private static defaultProviderID = "__default";
+	static defaultHandlerID = "__default";
 
 	registerDefault(onUpdate: (inString: string, macroContext?: MacroContext) => void) {
-		const def: Provider = {
+		const def: Handler = {
 			onUpdate
 		};
-		return this.registerProvider(NTree.defaultProviderID, def);
+		return this.registerHandler(NTree.defaultHandlerID, def);
 	}
 
-	private static defaultProviderOnUpdate(inString: string, macroContext?: MacroContext) {
+	private static defaultOnUpdateHandler(inString: string, macroContext?: MacroContext) {
 		if (macroContext) {
 			$(macroContext.output).wiki(macroContext.payload.slice(1, (macroContext as any).currentPayload as number + 1).map(load => load.contents).join(""));
 		}
 	}
 
-	update(delta: ProviderDelta, macroContext?: MacroContext) {
-		this.providers.forEach(provider => {
-			const id = provider.id as string;
+	update(delta: HandlerDelta, macroContext?: MacroContext) {
+		this.handlers.forEach(handler => {
+			const id = handler.id as string;
 
-			provider.delta = delta;
+			handler.delta = delta;
 
 			function clear() {
-				if (provider.onClear) provider.onClear(macroContext);
+				if (handler.onClear) handler.onClear(macroContext);
 			}
 
 			if (delta[id]) {
@@ -115,28 +115,22 @@ export class NTree {
 				const clearDirective = deltaVal === NTree.clear;
 				if (clearDirective) return clear();
 
-				if (provider.skipArgs) {
-					provider.onUpdate.call(provider, deltaVal, macroContext);
+				if (handler.skipArgs) {
+					handler.onUpdate.call(handler, deltaVal, macroContext);
 				} else {
 					const args = deltaVal instanceof Array ? deltaVal : [deltaVal];
 					args.push(macroContext);
 
-					provider.onUpdate.call(provider, ...args);
+					handler.onUpdate.call(handler, ...args);
 				}
 			} else {
-				if (provider.clearOnEveryLeaf) clear();
+				if (handler.clearOnEveryLeaf) clear();
 			}
 		});
 	}
 
-	/** Symbol used to trigger the `onClear()` handler for a provider if it exists. */
 	static clear = Symbol.for("@NTree/clear");
 
-	/**
-	 * Deletes an NTree and related State data.
-	 * @param id ID of the NTree.
-	 * @returns `true` if both the NTree and its State data existed and were deleted successfully, `false` otherwise.
-	 */
 	static deleteNTree(id: string) {
 		return NTree.Repository.delete(id) && NTree.StateStore.delete(id);
 	}
@@ -191,17 +185,23 @@ Macro.add("treebranch", {
 
 			const chunk = this.payload[current];
 			const args = chunk.args.full.trim() || "{}";
+
+			const delta: HandlerDelta = {
+				[NTree.defaultHandlerID]: chunk.contents
+			};
+
 			try {
-				const pDelta: ProviderDelta = Scripting.evalJavaScript(`(${args})`);
-				pDelta.__default = chunk.contents;
-
-				nTree.update(pDelta, this);
-
-				nTree.state.log[branchID] = current;
+				const parsedDelta = Scripting.evalJavaScript(`(${args})`) as HandlerDelta;
+				Object.keys(parsedDelta).forEach(key => {
+					delta[key] = parsedDelta[key];
+				});
 			} catch (ex) {
 				throw new Error(`@NTreeLeaf/#${current - 1}: Malformed argument object:\n${args}: ${ex}`);
 			}
 
+			nTree.update(delta, this);
+
+			nTree.state.log[branchID] = current;
 		} catch (ex) {
 			this.error("bad evaluation: " + (typeof ex === "object" ? ex.message : ex));
 		}
