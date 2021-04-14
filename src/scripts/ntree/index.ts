@@ -1,4 +1,9 @@
-import { MacroContext } from "twine-sugarcube";
+import { MacroContext as MCOriginal } from "twine-sugarcube";
+
+interface MacroContext extends MCOriginal {
+	currentPayload: number;
+	branchID: string;
+}
 
 interface NTreeState {
 	id: string;
@@ -151,21 +156,22 @@ Macro.add("treebranch", {
 	skipArgs: ["leaf"],
 
 	handler() {
+		const _this = this as MacroContext;
 		try {
-			const treeID: string = this.args[0];
-			const branchID: string = this.args[1];
-			const repeat: string = this.args[2] ?? NTreeBranchRepeatConfig.RepeatLast;
+			const treeID: string = _this.args[0];
+			const branchID: string = _this.args[1];
+			const repeat: string = _this.args[2] ?? NTreeBranchRepeatConfig.RepeatLast;
 
 			if (!treeID?.trim()) throw new Error(`@NTreeBranch: No NTree ID specified!`);
 			if (!branchID?.trim()) throw new Error(`@NTreeBranch: No NTreeBranch ID specified`)
 
-			const nTree = NTree.getNTree(treeID);
-			if (!nTree) throw new Error(`@NTreeBranch: No NTree with specified ID "${treeID}" found!`);
+			const tree = NTree.getNTree(treeID);
+			if (!tree) throw new Error(`@NTreeBranch: No NTree with specified ID "${treeID}" found!`);
 
-			const latest = nTree.state.log[branchID] ?? 0;
+			const latest = tree.state.log[branchID] ?? 0;
 			let current = latest + 1;
 
-			if (current === this.payload.length) {
+			if (current === _this.payload.length) {
 				switch (repeat) {
 					case NTreeBranchRepeatConfig.Repeat: {
 						current = 1;
@@ -181,29 +187,31 @@ Macro.add("treebranch", {
 				}
 			}
 
-			(this as any).currentPayload = current;
-
-			const chunk = this.payload[current];
-			const args = chunk.args.full.trim() || "{}";
+			_this.currentPayload = current;
+			_this.branchID = branchID;
 
 			const delta: HandlerDelta = {
-				[NTree.defaultHandlerID]: chunk.contents
+				[NTree.defaultHandlerID]: _this.payload[current].contents
 			};
 
-			try {
-				const parsedDelta = Scripting.evalJavaScript(`(${args})`) as HandlerDelta;
-				Object.keys(parsedDelta).forEach(key => {
-					delta[key] = parsedDelta[key];
-				});
-			} catch (ex) {
-				throw new Error(`@NTreeLeaf/#${current - 1}: Malformed argument object:\n${args}: ${ex}`);
+			for (let i = 1; i <= current; i++) {
+				const chunk = _this.payload[i];
+				const args = chunk.args.full.trim() || "{}";
+
+				try {
+					const parsedDelta = Scripting.evalJavaScript(`(${args})`) as HandlerDelta;
+					Object.keys(parsedDelta).forEach(key => {
+						delta[key] = parsedDelta[key];
+					});
+				} catch (ex) {
+					throw new Error(`@NTreeLeaf/#${i - 1}: Malformed argument object:\n${args}: ${ex}`);
+				}
 			}
 
-			nTree.update(delta, this);
-
-			nTree.state.log[branchID] = current;
+			tree.update(delta, _this);
+			tree.state.log[branchID] = current;
 		} catch (ex) {
-			this.error("bad evaluation: " + (typeof ex === "object" ? ex.message : ex));
+			_this.error("bad evaluation: " + (typeof ex === "object" ? ex.message : ex));
 		}
 	}
 });
