@@ -10,6 +10,7 @@ interface NTreeState {
 	log: {
 		[key: string]: number;
 	};
+	delta: HandlerDelta;
 }
 
 interface Handler {
@@ -42,7 +43,8 @@ export class NTree {
 		NTree.Repository.set(id, this);
 		NTree.StateStore.set(id, {
 			id,
-			log: {}
+			log: {},
+			delta: {}
 		});
 	}
 
@@ -190,25 +192,23 @@ Macro.add("treebranch", {
 			_this.currentPayload = current;
 			_this.branchID = branchID;
 
-			const delta: HandlerDelta = {
-				[NTree.defaultHandlerID]: _this.payload[current].contents
-			};
+			const chunk = _this.payload[current];
+			const args = chunk.args.full.trim() || "{}";
 
-			for (let i = 1; i <= current; i++) {
-				const chunk = _this.payload[i];
-				const args = chunk.args.full.trim() || "{}";
+			const delta = tree.state.delta;
 
-				try {
-					const parsedDelta = Scripting.evalJavaScript(`(${args})`) as HandlerDelta;
-					Object.keys(parsedDelta).forEach(key => {
-						delta[key] = parsedDelta[key];
-					});
-				} catch (ex) {
-					throw new Error(`@NTreeLeaf/#${i - 1}: Malformed argument object:\n${args}: ${ex}`);
-				}
+			try {
+				const parsedDelta = Scripting.evalJavaScript(`(${args})`) as HandlerDelta;
+				Object.keys(parsedDelta).forEach(key => {
+					delta[key] = parsedDelta[key];
+				});
+			} catch (ex) {
+				throw new Error(`@NTreeLeaf/#${current - 1}: Malformed argument object:\n${args}: ${ex}`);
 			}
 
-			tree.update(delta, _this);
+			tree.update(Object.assign({
+				[NTree.defaultHandlerID]: chunk.contents
+			}, delta), _this);
 			tree.state.log[branchID] = current;
 		} catch (ex) {
 			_this.error("bad evaluation: " + (typeof ex === "object" ? ex.message : ex));
