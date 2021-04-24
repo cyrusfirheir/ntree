@@ -102,7 +102,7 @@ export class NTree {
 
 	private static defaultOnUpdateHandler(inString: string, macroContext?: MacroContext) {
 		if (macroContext) {
-			$(macroContext.output).wiki(macroContext.payload.slice(1, (macroContext as any).currentPayload as number + 1).map(load => load.contents).join(""));
+			$(macroContext.output).wiki(macroContext.payload.slice(1, macroContext.currentPayload as number + 1).map(load => load.contents).join(""));
 		}
 	}
 
