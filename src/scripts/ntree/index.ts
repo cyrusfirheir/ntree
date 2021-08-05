@@ -1,6 +1,6 @@
 import { MacroContext as MCOriginal } from "twine-sugarcube";
 
-interface MacroContext extends MCOriginal {
+export interface MacroContext extends MCOriginal {
 	currentPayload: number;
 	branchID: string;
 }
@@ -22,7 +22,7 @@ interface Handler {
 	delta?: HandlerDelta;
 }
 
-interface HandlerDelta {
+export interface HandlerDelta {
 	[key: string]: any;
 }
 
@@ -93,7 +93,7 @@ export class NTree {
 
 	static defaultHandlerID = "__default";
 
-	registerDefault(onUpdate: (inString: string, macroContext?: MacroContext) => void) {
+	registerDefault(onUpdate: (this: Handler, inString: string, macroContext?: MacroContext) => void) {
 		const def: Handler = {
 			onUpdate
 		};
@@ -116,7 +116,7 @@ export class NTree {
 				if (handler.onClear) handler.onClear(macroContext);
 			}
 
-			if (delta[id]) {
+			if (delta.hasOwnProperty(id)) {
 				const deltaVal = delta[id];
 
 				const clearDirective = deltaVal === NTree.clear;
